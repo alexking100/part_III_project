@@ -35,10 +35,10 @@ def context_target_split(x, y, pi, num_context, num_extra_target, include_zero=F
         locations[0] = 0
     x_context = x[:, locations[:num_context], :]
     y_context = y[:, locations[:num_context], :]
-    pi_context = pi[:, locations[:num_context], :]
+    pi_context = pi[:, locations[:num_context], :] if pi is not None else None
     x_target = x[:, locations, :]
     y_target = y[:, locations, :]
-    pi_target = pi[:, locations, :]
+    pi_target = pi[:, locations, :] if pi is not None else None
     return x_context, y_context, pi_context, x_target, y_target, pi_target
 
 

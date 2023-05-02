@@ -129,12 +129,12 @@ class TransposedConvNet(nn.Module):
             # K, S and P are defined to achieve correct grid dimension
             ConvTranspose2d(
                 in_channels=1,
-                num_channels=self.num_channels,
+                out_channels=self.num_channels,
                 kernel_size=2,
                 stride=2,
                 padding=0,
             ),
-            BatchNorm2d(num_features=128),
+            BatchNorm2d(num_features=self.num_channels),
             ReLU(inplace=True),
         )
 

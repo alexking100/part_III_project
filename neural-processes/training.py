@@ -77,37 +77,20 @@ class NeuralProcessTrainer:
                 num_context = randint(*self.num_context_range)
                 num_extra_target = randint(*self.num_extra_target_range)
 
-                # Create context and target points and apply neural process
-                if self.is_img:
-                    img, _ = data  # data is a tuple (img, label)
-                    batch_size = img.size(0)
-                    context_mask, target_mask = batch_context_target_mask(
-                        self.neural_process.img_size,
-                        num_context,
-                        num_extra_target,
-                        batch_size,
-                    )
-
-                    img = img.to(self.device)
-                    context_mask = context_mask.to(self.device)
-                    target_mask = target_mask.to(self.device)
-
-                    p_y_pred, q_target, q_context = self.neural_process(
-                        img, context_mask, target_mask
-                    )
-
-                    # Calculate y_target as this will be required for loss
-                    _, y_target = img_mask_to_np_input(img, target_mask)
-
-                elif self.is_conv:
+                if self.is_conv:
                     """
                     CONVOLUTIONAL NETWORK TRAINING HERE
                     """
                     assert self.grid_size is not None
                     x, y, _ = data
-                    x_context, y_context, x_target, y_target = context_target_split(
-                        x, y, num_context, num_extra_target
-                    )
+                    (
+                        x_context,
+                        y_context,
+                        pi_context,
+                        x_target,
+                        y_target,
+                        pi_target,
+                    ) = context_target_split(x, y, None, num_context, num_extra_target)
                     p_y_pred, q_target, q_context = self.neural_process(
                         x_context, y_context, x_target, y_target
                     )
