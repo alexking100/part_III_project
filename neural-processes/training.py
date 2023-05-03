@@ -40,7 +40,6 @@ class NeuralProcessTrainer:
         num_extra_target_range,
         print_freq=100,
         grid_size=None,
-        lupi=None,
     ):
         self.device = device
         self.neural_process = neural_process
@@ -55,7 +54,6 @@ class NeuralProcessTrainer:
         self.steps = 0
         self.epoch_loss_history = []
         self.grid_size = grid_size
-        self.lupi = lupi
 
     def train(self, data_loader, epochs):
         """

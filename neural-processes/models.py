@@ -35,52 +35,54 @@ class Net(nn.Module):
         self.h_dim = dimensions["h_dim"]
         self.r_dim = dimensions["r_dim"]
         self.grid_size = dimensions["grid_size"]
+        self.input_channels = 2
+        self.out_channels = 2
 
         self.cnn_layers = Sequential(
             # Defining a 2D convolution layer
-            Conv2d(2, dimensions["num_channels"], kernel_size=3, stride=1, padding=1),
-            BatchNorm2d(dimensions["num_channels"]),
-            ReLU(inplace=True),
-            MaxPool2d(kernel_size=3, stride=2, padding=0, dilation=1),
-            # Defining another 2D convolution layer
             Conv2d(
+                self.input_channels,
                 dimensions["num_channels"],
-                dimensions["num_channels"],
-                kernel_size=3,
+                kernel_size=5,
                 stride=1,
                 padding=1,
             ),
             BatchNorm2d(dimensions["num_channels"]),
             ReLU(inplace=True),
-            MaxPool2d(kernel_size=3, stride=2, padding=0, dilation=1),
+            MaxPool2d(kernel_size=5, stride=2, padding=0, dilation=1),
+            # Defining another 2D convolution layer
+            Conv2d(
+                dimensions["num_channels"],
+                self.out_channels,
+                kernel_size=5,
+                stride=1,
+                padding=1,
+            ),
+            BatchNorm2d(self.out_channels),
+            ReLU(inplace=True),
+            MaxPool2d(kernel_size=5, stride=2, padding=0, dilation=1),
         )
 
         # Calculate the initial dimension of the linear layer after convolution layers
         self.n_conv = self.dim_out_conv(
-            dim_in=self.grid_size, dim_k=3, padding=1, stride=1
+            dim_in=self.grid_size, dim_k=5, padding=1, stride=1
         )
         self.n_conv = self.dim_out_pool(
-            dim_in=self.n_conv, dim_k=2, padding=0, stride=2
+            dim_in=self.n_conv, dim_k=5, padding=0, stride=2
         )
         self.n_conv = self.dim_out_conv(
-            dim_in=self.n_conv, dim_k=3, padding=1, stride=1
+            dim_in=self.n_conv, dim_k=5, padding=1, stride=1
         )
         self.n_conv = self.dim_out_pool(
-            dim_in=self.n_conv, dim_k=2, padding=0, stride=2
+            dim_in=self.n_conv, dim_k=5, padding=0, stride=2
         )
         self.n_conv = self.n_conv**2
-        self.n_conv *= dimensions["num_channels"]
+        self.n_conv *= self.out_channels
 
         # for time to be appended
         self.n_conv += 1
 
-        self.linear_layers = Sequential(
-            Linear(self.n_conv, self.h_dim),
-            ReLU(inplace=True),
-            Linear(self.h_dim, self.h_dim),
-            ReLU(inplace=True),
-            Linear(self.h_dim, self.r_dim),
-        )
+        self.linear_layers = Linear(self.n_conv, self.r_dim)
 
     def dim_out_conv(self, dim_in: int, dim_k: int, padding: int, stride: int) -> int:
         out = (dim_in - dim_k + 2 * padding) / stride + 1
@@ -132,7 +134,7 @@ class TransposedConvNet(nn.Module):
         # the ConvTranspose2d to reach 50*50 grid
         self.linear_layer = Linear(self.z_dim + self.t_dim, 144)
 
-        self.transposed_cnn_layer = Sequential(
+        self.hidden_to_mu = Sequential(
             # First transposed convolutional layer
             # K, S and P are defined to achieve correct grid dimension
             ConvTranspose2d(
@@ -144,9 +146,6 @@ class TransposedConvNet(nn.Module):
             ),
             BatchNorm2d(num_features=self.num_channels),
             ReLU(inplace=True),
-        )
-
-        self.hidden_to_mu = Sequential(
             # Second transposed convolutional layer
             ConvTranspose2d(
                 self.num_channels, out_channels=1, kernel_size=4, stride=2, padding=0
@@ -155,6 +154,17 @@ class TransposedConvNet(nn.Module):
         )
 
         self.hidden_to_sigma = Sequential(
+            # First transposed convolutional layer
+            # K, S and P are defined to achieve correct grid dimension
+            ConvTranspose2d(
+                in_channels=1,
+                out_channels=self.num_channels,
+                kernel_size=2,
+                stride=2,
+                padding=0,
+            ),
+            BatchNorm2d(num_features=self.num_channels),
+            ReLU(inplace=True),
             # Second transposed convolutional layer
             ConvTranspose2d(
                 self.num_channels, out_channels=1, kernel_size=4, stride=2, padding=0
@@ -207,12 +217,11 @@ class TransposedConvNet(nn.Module):
         # Make room for num_channels
         z_upsampled = z_upsampled.unsqueeze(1)
 
-        hidden_grid = self.transposed_cnn_layer(z_upsampled)
-
         # Train two different convolutions to get the mean, sigma
-        # Shape (batch_size, num_channels=1, grid_size, grid_size)
-        mean_grid = torch.sigmoid(self.hidden_to_mu(hidden_grid))
-        sigma_grid = torch.sigmoid(self.hidden_to_sigma(hidden_grid))
+        # output shape (batch_size, num_channels=1, grid_size, grid_size)
+        # Apply sigmoid to make them positive
+        mean_grid = torch.sigmoid(self.hidden_to_mu(z_upsampled))
+        sigma_grid = torch.sigmoid(self.hidden_to_sigma(z_upsampled))
 
         # Shape (batch_size, grid_size, grid_size)
         mean_grid = mean_grid.squeeze(1)
