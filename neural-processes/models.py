@@ -38,13 +38,19 @@ class Net(nn.Module):
 
         self.cnn_layers = Sequential(
             # Defining a 2D convolution layer
-            Conv2d(2, 128, kernel_size=3, stride=1, padding=1),
-            BatchNorm2d(128),
+            Conv2d(2, dimensions["num_channels"], kernel_size=3, stride=1, padding=1),
+            BatchNorm2d(dimensions["num_channels"]),
             ReLU(inplace=True),
             MaxPool2d(kernel_size=3, stride=2, padding=0, dilation=1),
             # Defining another 2D convolution layer
-            Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
-            BatchNorm2d(128),
+            Conv2d(
+                dimensions["num_channels"],
+                dimensions["num_channels"],
+                kernel_size=3,
+                stride=1,
+                padding=1,
+            ),
+            BatchNorm2d(dimensions["num_channels"]),
             ReLU(inplace=True),
             MaxPool2d(kernel_size=3, stride=2, padding=0, dilation=1),
         )
@@ -63,7 +69,8 @@ class Net(nn.Module):
             dim_in=self.n_conv, dim_k=2, padding=0, stride=2
         )
         self.n_conv = self.n_conv**2
-        self.n_conv *= 128
+        self.n_conv *= dimensions["num_channels"]
+
         # for time to be appended
         self.n_conv += 1
 
@@ -104,6 +111,7 @@ class Net(nn.Module):
 
         # flatten the output of the ConvNet
         xy = xy.view(xy.size(0), -1)
+
         # combine x and xy when xy is flattened
         xy = torch.cat((x, xy), dim=1)
         r = self.linear_layers(xy)

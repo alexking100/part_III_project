@@ -4,24 +4,46 @@ import matplotlib.animation as animation
 from matplotlib.animation import FuncAnimation
 import numpy as np
 
+"""
+standardize fonts and figures 
+"""
+
 
 class Performance:
-    def __init__(self, result, **params):
+    def __init__(self, result, dimensions):
         self.result = result
-        self.params = params
+        self.dimensions = dimensions
         self.mean_accuracy, self.var_accuracy = self.check_accuracy()
 
     def check_accuracy(self):
-        accuracy = torch.empty(self.params["max_iter_time"])
-        for k in range(self.params["max_iter_time"]):
+        accuracy = torch.empty(self.dimensions["max_iter_time"])
+        for k in range(self.dimensions["max_iter_time"]):
             accuracy[k] = torch.sum((self.result[k][0] - self.result[k][1]) ** 2) / (
-                self.params["grid_size"] ** 2
+                self.dimensions["grid_size"] ** 2
             )
         return torch.mean(accuracy), torch.var(accuracy)
 
     # add some more metrics to this class
     def more_metrics_go_here(self):
         pass
+
+
+def plot_losses(loss, lupi_loss, conv_loss):
+    fig = plt.figure()
+    plt.axhline(color="black")
+    plt.axvline(color="black")
+    plt.title("Epoch Loss")
+    plt.xlabel("Epochs")
+    plt.ylabel("Average Loss per Epoch")
+    if loss is not None:
+        plt.plot(loss, label="basic NP", alpha=0.8)
+    if lupi_loss is not None:
+        plt.plot(lupi_loss, label="LUPI NP", alpha=0.8)
+    if conv_loss is not None:
+        plt.plot(conv_loss, label="Convolutional Encoder NP", alpha=0.8)
+    plt.legend()
+    plt.grid()
+    plt.show()
 
 
 def single_hm(
