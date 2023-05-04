@@ -3,6 +3,21 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.animation import FuncAnimation
 import numpy as np
+import matplotlib as mpl
+
+mpl.rcParams.update(
+    {
+        "font.family": "sans-serif",
+        "font.size": 12,
+        "figure.figsize": [8, 6],
+        "lines.linewidth": 2,
+        "lines.markersize": 8,
+        "legend.fontsize": "medium",
+        "axes.labelsize": "medium",
+        "xtick.labelsize": "medium",
+        "ytick.labelsize": "medium",
+    }
+)
 
 """
 standardize fonts and figures 
@@ -35,6 +50,8 @@ def plot_losses(loss, lupi_loss, conv_loss):
     plt.title("Epoch Loss")
     plt.xlabel("Epochs")
     plt.ylabel("Average Loss per Epoch")
+    plt.ylim(-500000, 500000)
+    plt.ticklabel_format(style="sci", axis="both")
     if loss is not None:
         plt.plot(loss, label="basic NP", alpha=0.8)
     if lupi_loss is not None:
@@ -46,34 +63,27 @@ def plot_losses(loss, lupi_loss, conv_loss):
     plt.show()
 
 
-def single_hm(
-    u_k,
-    k: int,
-    max_iter_time: int,
-    plot_target: bool,
-    plot_solution: bool,
-    plot_variance: bool,
-):
+def single_hm(u_k, k: int, max_iter_time: int, which_plot: str):
+    if which_plot == "Target":
+        i = 0
+    elif which_plot == "Mean":
+        i = 1
+    elif which_plot == "Variance":
+        i = 2
+    else:
+        print("Please put either Target, Mean or Variance for argument which_plot")
+        raise KeyError
+
     # Clear the current plot figure
     plt.clf()
     plt.xlabel("x")
     plt.ylabel("y")
 
     # This is to plot u_k (u at time-step k)
-    if plot_target:
-        plt.title(f"Temperature at t = {k/max_iter_time:.3f} unit time, Target")
-        plt.pcolormesh(u_k[0], cmap=plt.cm.jet, vmin=0, vmax=1)
-    elif plot_solution:
-        plt.title(
-            f"Temperature at t = {k/max_iter_time:.3f} unit time, Prediction Mean"
-        )
-        plt.pcolormesh(u_k[1], cmap=plt.cm.jet, vmin=0, vmax=1)
-    elif plot_variance:
-        plt.title(f"Temperature at t = {k/max_iter_time:.3f} unit time, Prediction Var")
-        plt.pcolormesh(u_k[2], cmap=plt.cm.jet, vmin=0, vmax=1)
-    else:
-        raise ValueError
-
+    plt.title(
+        "Temperature at t = {:.3f} unit time, {}".format(k / max_iter_time, which_plot)
+    )
+    plt.pcolormesh(u_k[i], cmap=plt.cm.jet, vmin=0, vmax=2.0)
     plt.colorbar()
     # plt.show()
     return plt
