@@ -136,7 +136,7 @@ class TransposedConvNet(nn.Module):
 
         self.hidden_to_mu = Sequential(
             # First transposed convolutional layer
-            # K, S and P are defined to achieve correct grid dimension
+            # Kernel, Stride and Padding are defined to achieve correct grid dimension
             ConvTranspose2d(
                 in_channels=1,
                 out_channels=self.num_channels,

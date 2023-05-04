@@ -1,9 +1,9 @@
 import torch
 from random import randint
-from neural_process import NeuralProcessImg, NeuralProcessConv
+from neural_process import NeuralProcessConv
 from torch import nn
 from torch.distributions.kl import kl_divergence
-from utils import context_target_split, batch_context_target_mask, img_mask_to_np_input
+from utils import context_target_split, batch_context_target_mask
 
 
 class NeuralProcessTrainer:
@@ -14,7 +14,7 @@ class NeuralProcessTrainer:
     ----------
     device : torch.device
 
-    neural_process : neural_process.NeuralProcess or NeuralProcessImg instance
+    neural_process : neural_process.NeuralProcess instance
 
     optimizer : one of torch.optim optimizers
 
@@ -40,6 +40,7 @@ class NeuralProcessTrainer:
         num_extra_target_range,
         print_freq=100,
         grid_size=None,
+        is_lupi=False,
     ):
         self.device = device
         self.neural_process = neural_process
@@ -49,8 +50,8 @@ class NeuralProcessTrainer:
         self.print_freq = print_freq
 
         # Check if neural process is for images
-        self.is_img = isinstance(self.neural_process, NeuralProcessImg)
         self.is_conv = isinstance(self.neural_process, NeuralProcessConv)
+        self.is_lupi = is_lupi
         self.steps = 0
         self.epoch_loss_history = []
         self.grid_size = grid_size
@@ -93,7 +94,7 @@ class NeuralProcessTrainer:
                         x_context, y_context, x_target, y_target
                     )
 
-                else:
+                elif self.is_lupi:
                     x, y, pi = data
                     (
                         x_context,
@@ -113,6 +114,25 @@ class NeuralProcessTrainer:
                         pi_target=pi_target,
                     )
 
+                else:
+                    x, y, pi = data
+                    (
+                        x_context,
+                        y_context,
+                        _,
+                        x_target,
+                        y_target,
+                        _,
+                    ) = context_target_split(x, y, pi, num_context, num_extra_target)
+
+                    p_y_pred, q_target, q_context = self.neural_process(
+                        x_context,
+                        y_context,
+                        x_target,
+                        y_target=y_target,
+                        pi_context=None,
+                        pi_target=None,
+                    )
                 loss = self._loss(p_y_pred, y_target, q_target, q_context)
                 loss.backward()
                 self.optimizer.step()
