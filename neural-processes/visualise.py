@@ -89,43 +89,79 @@ def single_hm(u_k, k: int, max_iter_time: int, which_plot: str):
     return plt
 
 
-def plotheatmap(result_k, max_iter_time, fig=None, axes=None, ani=False):
+def plotheatmap(result, k, max_iter_time, mean_var_only=False):
     """
-    if ani==True, need to input fig and axes
-    if ani==False, create fig, axes within function
+    If we input noise we don't want a target result
     """
 
-    k = 0
+    result_k = result[k]
 
     # Clear the current plot figure
     plt.clf()
 
-    if not ani:
-        fig, axes = plt.subplots(ncols=3, figsize=(15, 4))
+    if mean_var_only:
+        fig, axes = plt.subplots(
+            ncols=2,
+            figsize=(10, 4),
+            gridspec_kw={"width_ratios": [1, 1], "height_ratios": [1]},
+        )
+        ax2, ax3 = axes
 
-    ax1, ax2, ax3 = axes
+    else:
+        fig, axes = plt.subplots(
+            ncols=3,
+            figsize=(15, 4),
+            gridspec_kw={"width_ratios": [1, 1, 1], "height_ratios": [1]},
+        )
+        ax1, ax2, ax3 = axes
+        ax1.set_title(f"Target, t = {k / max_iter_time:.3f}")
+        ax1.set_xlabel("x")
+        ax1.set_ylabel("y")
+        ax1.set_aspect("equal")
+        im1 = ax1.pcolormesh(result_k[0], cmap=plt.cm.jet, vmin=0, vmax=2)
 
-    # plt.title(f"Temperature at t = {k * delta_t:.3f} unit time")
-    ax1.set_title(f"Target at t = {k / max_iter_time:.3f} unit time")
-    ax1.set_xlabel("x")
-    ax1.set_ylabel("y")
-
-    ax2.set_title(f"Predicted Mean at t = {k / max_iter_time:.3f} unit time")
+    ax2.set_title(f"Mean, t = {k / max_iter_time:.3f}")
     ax2.set_xlabel("x")
     ax2.set_ylabel("y")
 
-    ax3.set_title(f"Predicted Var at t = {k / max_iter_time:.3f} unit time")
+    ax3.set_title(f"Variance, t = {k / max_iter_time:.3f}")
     ax3.set_xlabel("x")
     ax3.set_ylabel("y")
 
-    # This is to plot u_k (u at time-step k)
-    im1 = ax1.pcolormesh(result_k[0], cmap=plt.cm.jet, vmin=0, vmax=1)
-    im2 = ax2.pcolormesh(result_k[1], cmap=plt.cm.jet, vmin=0, vmax=1)
-    im3 = ax3.pcolormesh(result_k[2], cmap=plt.cm.jet, vmin=0, vmax=1)
-    fig.colorbar(im1, ax=ax3)
+    ax2.set_aspect("equal")
+    ax3.set_aspect("equal")
 
-    # fig.colorbar()
-    # ax2.colorbar()
-    # ax3.colorbar()
+    # This is to plot u_k (u at time-step k)
+    im2 = ax2.pcolormesh(result_k[1], cmap=plt.cm.jet, vmin=0, vmax=2)
+    im3 = ax3.pcolormesh(result_k[2], cmap=plt.cm.jet, vmin=0, vmax=2)
+    fig.colorbar(im2, ax=axes, fraction=0.05)
     plt.show()
-    return im1, im2, im3
+
+
+def plot_residuals(result, k, max_iter_time):
+    result_k = result[k]
+
+    fig, axes = plt.subplots(
+        ncols=2,
+        figsize=(10, 4),
+        gridspec_kw={"width_ratios": [1, 1], "height_ratios": [1]},
+    )
+    ax1, ax2 = axes
+
+    # plt.title(f"Temperature at t = {k * delta_t:.3f} unit time")
+    ax1.set_title(f"Residual Squared, t = {k / max_iter_time:.3f}")
+    ax1.set_xlabel("x")
+    ax1.set_ylabel("y")
+    ax2.set_title(f"Variance, t = {k / max_iter_time:.3f}")
+    ax2.set_xlabel("x")
+    ax2.set_ylabel("y")
+    ax1.set_aspect("equal")
+    ax2.set_aspect("equal")
+
+    im1 = ax1.pcolormesh(
+        (result_k[0] - result_k[1]) ** 2, cmap=plt.cm.jet, vmin=0, vmax=2
+    )
+    im2 = ax2.pcolormesh(result_k[2], cmap=plt.cm.jet, vmin=0, vmax=2)
+    fig.colorbar(im1, ax=axes, fraction=0.05)
+    plt.show()
+    return im1, im2
