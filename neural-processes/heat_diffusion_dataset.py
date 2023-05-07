@@ -175,9 +175,16 @@ class Diffusion_Data(Dataset):
         max_temp = torch.max(out[k, :])
         avg_heat = torch.sum(out[k, :]) / (self.grid_size**2)
         avg_dilution = torch.count_nonzero(out[k, :]) / (self.grid_size**2)
-        avg_dilution = (out[k, :] > 0.1).sum().item()
 
-        return torch.Tensor([self.diffusion_coef, max_temp, avg_heat, avg_dilution])
+        entropy = (
+            out[k, :]
+            / torch.sum(out[k, :])
+            * torch.log(out[k, :] / torch.sum(out[k, :]))
+        )
+        entropy[np.isnan(entropy)] = 0
+        avg_entropy = -torch.sum(entropy)
+
+        return torch.Tensor([self.diffusion_coef, max_temp, avg_heat, avg_entropy])
 
     def neumann_step(self, u, dt, D, left_bc, right_bc, top_bc, bottom_bc):
         """

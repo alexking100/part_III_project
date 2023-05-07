@@ -25,18 +25,26 @@ standardize fonts and figures
 
 
 class Performance:
-    def __init__(self, result, dimensions):
-        self.result = result
+    def __init__(self, y_target, y_mean, y_var, dimensions):
+        self.y_target = y_target
+        self.y_mean = y_mean
+        self.y_var = y_var
         self.dimensions = dimensions
         self.mean_accuracy, self.var_accuracy = self.check_accuracy()
 
     def check_accuracy(self):
-        accuracy = torch.empty(self.dimensions["max_iter_time"])
-        for k in range(self.dimensions["max_iter_time"]):
-            accuracy[k] = torch.sum((self.result[k][0] - self.result[k][1]) ** 2) / (
-                self.dimensions["grid_size"] ** 2
-            )
-        return torch.mean(accuracy), torch.var(accuracy)
+        return (
+            torch.mean((self.y_target - self.y_mean) ** 2),
+            torch.var((self.y_target - self.y_mean) ** 2),
+        )
+
+    # def check_accuracy(self):
+    #     accuracy = torch.empty(self.dimensions["max_iter_time"])
+    #     for k in range(self.dimensions["max_iter_time"]):
+    #         accuracy[k] = torch.sum((self.result[k][0] - self.result[k][1]) ** 2) / (
+    #             self.dimensions["grid_size"] ** 2
+    #         )
+    #     return torch.mean(accuracy), torch.var(accuracy)
 
     # add some more metrics to this class
     def more_metrics_go_here(self):
@@ -233,27 +241,23 @@ def get_energy_and_entropy(result):
     )
 
 
-def plot_energy(target, np_mean, lupi_mean, conv_mean, energy=True):
+def plot_pi_data(target, np_mean, lupi_mean, conv_mean, title, xlabel, ylabel):
+    xvalues = [i / len(target) for i in range(len(target))]
     fig = plt.figure()
     plt.axhline(color="black")
     plt.axvline(color="black")
-    if energy:
-        plt.title("Average Heat Energy in grid")
-        plt.xlabel("Time")
-        plt.ylabel("Average Energy")
-    else:
-        plt.title("Average Entropy ??(not quite)?? in grid")
-        plt.xlabel("Time")
-        plt.ylabel("Average Entropy")
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
     # plt.ticklabel_format(axis="both", style="sci", scilimits=(1, 1))
     if target is not None:
-        plt.plot(target, label="Target", alpha=0.8)
+        plt.plot(xvalues, target, label="Target")
     if np_mean is not None:
-        plt.plot(np_mean, label="NP", alpha=0.8)
+        plt.plot(xvalues, np_mean, label="NP")
     if lupi_mean is not None:
-        plt.plot(lupi_mean, label="LUPI", alpha=0.8)
+        plt.plot(xvalues, lupi_mean, label="LUPI")
     if conv_mean is not None:
-        plt.plot(conv_mean, label="Conv", alpha=0.8)
+        plt.plot(xvalues, conv_mean, label="Conv")
     plt.legend()
     plt.grid()
     plt.show()
