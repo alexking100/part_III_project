@@ -162,8 +162,8 @@ class Diffusion_Data(Dataset):
         self.data = []
         self.time_array = torch.linspace(0, 1, max_iter_time)
         self.dt = 1.0 / self.max_iter_time
-        self.pi = torch.zeros((self.max_iter_time, 4))
         self.sigma = sigma
+        self.pi_dim = 4
 
         for i in range(self.num_samples):
             self.run_neumann_boundary_conditions()
@@ -175,11 +175,9 @@ class Diffusion_Data(Dataset):
         max_temp = torch.max(out[k, :])
         avg_heat = torch.sum(out[k, :]) / (self.grid_size**2)
         avg_dilution = torch.count_nonzero(out[k, :]) / (self.grid_size**2)
+        avg_dilution = (out[k, :] > 0.1).sum().item()
 
-        self.pi[k, 0] = self.diffusion_coef
-        self.pi[k, 1] = max_temp
-        self.pi[k, 2] = avg_heat
-        self.pi[k, 3] = avg_dilution
+        return torch.Tensor([self.diffusion_coef, max_temp, avg_heat, avg_dilution])
 
     def neumann_step(self, u, dt, D, left_bc, right_bc, top_bc, bottom_bc):
         """
@@ -205,7 +203,7 @@ class Diffusion_Data(Dataset):
 
     def run_neumann_boundary_conditions(self):
         out = torch.zeros((self.max_iter_time, self.grid_size * self.grid_size))
-
+        pi = torch.zeros((self.max_iter_time, self.pi_dim))
         # re-randomise initial conditions
         self.u0 = self.initial_conditions.random_square(
             self.square_range, self.temp_range
@@ -229,7 +227,7 @@ class Diffusion_Data(Dataset):
 
         # Integrate the heat equation in time
         u = torch.clone(self.u0)
-        for i in range(self.max_iter_time):
+        for k in range(self.max_iter_time):
             u = torch.Tensor(
                 self.neumann_step(
                     u,
@@ -241,10 +239,10 @@ class Diffusion_Data(Dataset):
                     bottom_bc,
                 )
             )
-            out[i, :] = torch.flatten(u)
-            self.get_privileged_info(out, i)
+            out[k, :] = torch.flatten(u)
+            pi[k, :] = self.get_privileged_info(out, k)
 
-        self.data.append((self.time_array.unsqueeze(1), out, self.pi))
+        self.data.append((self.time_array.unsqueeze(1), out, pi))
 
     def run_finite_difference(self):
         self.data = []
@@ -270,6 +268,7 @@ class Diffusion_Data(Dataset):
             self.u[k + 1] = self.u[k] + self.dt * self.diffusion_coef * laplacian
             out[k, :] = torch.flatten(self.u[k, :, :])
             self.get_privileged_info(out, k)
+
         self.data.append((self.time_array.unsqueeze(1), out, self.pi))
 
         # last time value won't get filled in by this method
@@ -298,9 +297,9 @@ class Diffusion_Data(Dataset):
     def __len__(self):
         return self.num_samples
 
-    def visualise_solution(self, show_until: int, i=0):
+    def visualise_solution(self, show_until: int, ds_num=0):
         for k in range(show_until):
-            u = self.data[i][1][k, :].reshape(self.grid_size, self.grid_size)
+            u = self.data[ds_num][1][k, :].reshape(self.grid_size, self.grid_size)
             plt.imshow(u, cmap="hot", origin="lower", extent=[0, 10, 0, 10])
             plt.colorbar()
             plt.title("Heatmap t={:.2f}".format(self.time_array[k]))
