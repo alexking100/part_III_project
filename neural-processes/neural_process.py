@@ -51,8 +51,8 @@ class NeuralProcessConv(nn.Module):
         # Initialize networks
         self.xy_to_r = Net(dimensions)
         self.r_to_mu_sigma = MuSigmaEncoder(dimensions)
-        self.xz_to_y = TransposedConvNet(dimensions)
-        # self.xz_to_y = Decoder(dimensions)
+        # self.xz_to_y = TransposedConvNet(dimensions)
+        self.xz_to_y = Decoder(dimensions)
 
     def aggregate(self, r_i):
         """

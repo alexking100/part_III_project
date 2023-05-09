@@ -63,7 +63,7 @@ def plot_losses(loss, lupi_loss, conv_loss, plot_moving_average=True):
     plt.xlabel("Epochs")
     plt.ylabel("Average Loss per Epoch")
     plt.ylim(-800000, 500000)
-    plt.ticklabel_format(axis="both", style="sci", scilimits=(3, 3))
+    plt.ticklabel_format(axis="y", style="sci", scilimits=(5, 5))
     if loss is not None:
         plt.plot(loss, label="basic NP", alpha=0.8)
     if lupi_loss is not None:
@@ -82,7 +82,7 @@ def plot_losses(loss, lupi_loss, conv_loss, plot_moving_average=True):
         plt.xlabel("Epochs")
         plt.ylabel("Average Loss per Epoch")
         plt.ylim(-800000, 500000)
-        plt.ticklabel_format(axis="both", style="sci", scilimits=(3, 3))
+        plt.ticklabel_format(axis="y", style="sci", scilimits=(5, 5))
         if loss is not None:
             sparse_loss = moving_average(loss, 10)
             plt.plot(sparse_loss, label="basic NP", alpha=0.8)
@@ -134,6 +134,17 @@ def plot_noisey_response(noise_output, time_iter, title=None):
     # This is to plot u_k (u at time-step k)
     plt.title("{}, t = {:.3f}".format(title, time_iter / noise_output.shape[0]))
     plt.pcolormesh(noise_output[time_iter], cmap=plt.cm.jet, vmin=0, vmax=2.0)
+    plt.colorbar()
+    plt.show()
+    return plt
+
+
+def visualise_model_solution(y, time_iter, title="", vmin=0.0, vmax=2.0):
+    plt.xlabel("x")
+    plt.ylabel("y")
+    # This is to plot u_k (u at time-step k)
+    plt.title("{}, t = {:.3f}".format(title, time_iter / y.shape[0]))
+    plt.pcolormesh(y[time_iter], cmap=plt.cm.jet, vmin=vmin, vmax=vmax)
     plt.colorbar()
     plt.show()
     return plt
@@ -251,7 +262,7 @@ def plot_pi_data(target, np_mean, lupi_mean, conv_mean, title, xlabel, ylabel):
     plt.title(title)
     # plt.ticklabel_format(axis="both", style="sci", scilimits=(1, 1))
     if target is not None:
-        plt.plot(xvalues, target, label="Target")
+        plt.plot(xvalues, target, label="Target", ls="--", linewidth=2)
     if np_mean is not None:
         plt.plot(xvalues, np_mean, label="NP")
     if lupi_mean is not None:
