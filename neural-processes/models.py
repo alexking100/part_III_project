@@ -43,39 +43,39 @@ class Net(nn.Module):
             Conv2d(
                 self.input_channels,
                 dimensions["num_channels"],
-                kernel_size=3,
+                kernel_size=5,
                 stride=1,
                 padding=0,
             ),
             BatchNorm2d(dimensions["num_channels"]),
             ReLU(inplace=True),
-            # MaxPool2d(kernel_size=5, stride=2, padding=0, dilation=1),
+            MaxPool2d(kernel_size=3, stride=2, padding=0, dilation=1),
             # Defining another 2D convolution layer
             Conv2d(
                 dimensions["num_channels"],
                 self.out_channels,
-                kernel_size=3,
+                kernel_size=5,
                 stride=1,
                 padding=0,
             ),
             BatchNorm2d(self.out_channels),
             ReLU(inplace=True),
-            # MaxPool2d(kernel_size=5, stride=2, padding=0, dilation=1),
+            MaxPool2d(kernel_size=3, stride=2, padding=0, dilation=1),
         )
 
         # Calculate the initial dimension of the linear layer after convolution layers
         self.n_conv = self.dim_out_conv(
-            dim_in=self.grid_size, dim_k=3, padding=0, stride=1
+            dim_in=self.grid_size, dim_k=5, padding=0, stride=1
         )
-        # self.n_conv = self.dim_out_pool(
-        #     dim_in=self.n_conv, dim_k=5, padding=0, stride=2
-        # )
+        self.n_conv = self.dim_out_pool(
+            dim_in=self.n_conv, dim_k=3, padding=0, stride=2
+        )
         self.n_conv = self.dim_out_conv(
-            dim_in=self.n_conv, dim_k=3, padding=0, stride=1
+            dim_in=self.n_conv, dim_k=5, padding=0, stride=1
         )
-        # self.n_conv = self.dim_out_pool(
-        #     dim_in=self.n_conv, dim_k=5, padding=0, stride=2
-        # )
+        self.n_conv = self.dim_out_pool(
+            dim_in=self.n_conv, dim_k=3, padding=0, stride=2
+        )
         self.n_conv = self.n_conv**2
         self.n_conv *= self.out_channels
 
@@ -117,6 +117,7 @@ class Net(nn.Module):
         # combine x and xy when xy is flattened
         xy = torch.cat((x, xy), dim=1)
         r = self.linear_layers(xy)
+
         return r
 
 
@@ -298,7 +299,7 @@ class RepresentationAggregator(nn.Module):
         self.hidden_to_representation = nn.Sequential(*layers)
 
     def forward(self, r_pi, r):
-        return self.hidden_to_representation(torch.cat((r_pi, r), dim=1))
+        return r + self.hidden_to_representation(torch.cat((r_pi, r), dim=1))
 
 
 class TemporalConvNet(nn.Module):

@@ -30,25 +30,17 @@ class Performance:
         self.y_mean = y_mean
         self.y_var = y_var
         self.dimensions = dimensions
-        self.mean_accuracy, self.var_accuracy = self.check_accuracy()
 
-    def check_accuracy(self):
-        return (
-            torch.mean((self.y_target - self.y_mean) ** 2),
-            torch.var((self.y_target - self.y_mean) ** 2),
-        )
+    def residual(self):
+        return (self.y_target - self.y_mean) ** 2
 
-    # def check_accuracy(self):
-    #     accuracy = torch.empty(self.dimensions["max_iter_time"])
-    #     for k in range(self.dimensions["max_iter_time"]):
-    #         accuracy[k] = torch.sum((self.result[k][0] - self.result[k][1]) ** 2) / (
-    #             self.dimensions["grid_size"] ** 2
-    #         )
-    #     return torch.mean(accuracy), torch.var(accuracy)
+    def gaussian(self, x: torch.Tensor, mu: torch.Tensor, var: torch.Tensor):
+        normalisation = 1 / (2 * np.pi * var) ** 0.5
+        return normalisation * np.exp(-((x - mu) ** 2) / (2 * var))
 
-    # add some more metrics to this class
-    def more_metrics_go_here(self):
-        pass
+    def log_likelihood(self) -> torch.Tensor:
+        # Gaussian
+        return self.gaussian(self.y_target, self.y_mean, self.y_var)
 
 
 def moving_average(x, w):
@@ -264,11 +256,26 @@ def plot_pi_data(target, np_mean, lupi_mean, conv_mean, title, xlabel, ylabel):
     if target is not None:
         plt.plot(xvalues, target, label="Target", ls="--", linewidth=2)
     if np_mean is not None:
-        plt.plot(xvalues, np_mean, label="NP")
+        plt.plot(xvalues, np_mean, label="NP", linewidth=2, color="orange")
     if lupi_mean is not None:
-        plt.plot(xvalues, lupi_mean, label="LUPI")
+        plt.plot(xvalues, lupi_mean, label="LUPI", linewidth=2, color="red")
     if conv_mean is not None:
-        plt.plot(xvalues, conv_mean, label="Conv")
+        plt.plot(xvalues, conv_mean, label="Conv", linewidth=2, color="green")
+
+    if title == "Entropy":
+        plt.ylim(5, 8)
     plt.legend()
     plt.grid()
     plt.show()
+
+def get_pi(y):
+    energy = torch.sum(y, dim=(1,2)) / (y.shape[1]**2)
+
+    norm = torch.sum(y, dim=(1,2)).unsqueeze(1).unsqueeze(2)
+    entropy = y / norm * torch.log(y / norm)
+    entropy[np.isnan(entropy)] = 0
+    entropy = - torch.sum(entropy, dim=(1,2))
+
+    max_temp = torch.Tensor([torch.max(y[k]) for k in range(y.shape[0])])
+
+    return max_temp, energy, entropy
