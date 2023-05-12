@@ -197,11 +197,31 @@ class Diffusion_Data(Dataset):
             u[:-2, 1:-1] - 2 * u[1:-1, 1:-1] + u[2:, 1:-1]
         )
 
-        # Apply the Neumann boundary conditions
-        laplacian[:, 0] = (u[:, 1] - u[:, 0]) + left_bc(u, 0)
-        laplacian[:, -1] = (u[:, -2] - u[:, -1]) + right_bc(u, 0)
-        laplacian[0, :] = (u[1, :] - u[0, :]) + top_bc(u, 0)
-        laplacian[-1, :] = (u[-2, :] - u[-1, :]) + bottom_bc(u, 0)
+        # left edge
+        laplacian[1:-1, 0] = (u[1:-1, 1] - 2 * u[1:-1, 0]) + (
+            u[:-2, 0] - 2 * u[1:-1, 0] + u[2:, 0]
+        )
+
+        # right edge
+        laplacian[1:-1, -1] = (2 * u[1:-1, -2] - 2 * u[1:-1, -1]) + (
+            u[:-2, -1] - 2 * u[1:-1, -1] + u[2:, -1]
+        )
+
+        # bottom edge
+        laplacian[0, 1:-1] = (u[0, :-2] - 2 * u[0, 1:-1] + u[0, 2:]) + (
+            2 * u[1, 1:-1] - 2 * u[0, 1:-1]
+        )
+
+        # top edge
+        laplacian[-1, 1:-1] = (u[-1, :-2] - 2 * u[-1, 1:-1] + u[-1, 2:]) + (
+            2 * u[-2, 1:-1] - 2 * u[-1, 1:-1]
+        )
+
+        # # Apply the Neumann boundary conditions
+        # laplacian[:, 0] = (u[:, 1] - u[:, 0]) + left_bc(u, 0)
+        # laplacian[:, -1] = (u[:, -2] - u[:, -1]) + right_bc(u, 0)
+        # laplacian[0, :] = (u[1, :] - u[0, :]) + top_bc(u, 0)
+        # laplacian[-1, :] = (u[-2, :] - u[-1, :]) + bottom_bc(u, 0)
 
         # Update the solution using the forward Euler method
         u_new = u + dt * D * laplacian
@@ -307,7 +327,7 @@ class Diffusion_Data(Dataset):
     def visualise_solution(self, show_until: int, ds_num=0):
         for k in range(show_until):
             u = self.data[ds_num][1][k, :].reshape(self.grid_size, self.grid_size)
-            plt.imshow(u, cmap="hot", origin="lower", extent=[0, 10, 0, 10])
+            plt.imshow(u, cmap="hot", origin="lower", vmin=0, vmax=2)
             plt.colorbar()
             plt.title("Heatmap t={:.2f}".format(self.time_array[k]))
             plt.xlabel("x")

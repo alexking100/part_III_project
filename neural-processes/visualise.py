@@ -252,6 +252,7 @@ def plot_pi_data(target, np_mean, lupi_mean, conv_mean, title, xlabel, ylabel):
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)
+
     # plt.ticklabel_format(axis="both", style="sci", scilimits=(1, 1))
     if target is not None:
         plt.plot(xvalues, target, label="Target", ls="--", linewidth=2)
@@ -268,13 +269,14 @@ def plot_pi_data(target, np_mean, lupi_mean, conv_mean, title, xlabel, ylabel):
     plt.grid()
     plt.show()
 
-def get_pi(y):
-    energy = torch.sum(y, dim=(1,2)) / (y.shape[1]**2)
 
-    norm = torch.sum(y, dim=(1,2)).unsqueeze(1).unsqueeze(2)
+def get_pi(y):
+    energy = torch.sum(y, dim=(1, 2)) / (y.shape[1] ** 2)
+
+    norm = torch.sum(y, dim=(1, 2)).unsqueeze(1).unsqueeze(2)
     entropy = y / norm * torch.log(y / norm)
     entropy[np.isnan(entropy)] = 0
-    entropy = - torch.sum(entropy, dim=(1,2))
+    entropy = -torch.sum(entropy, dim=(1, 2))
 
     max_temp = torch.Tensor([torch.max(y[k]) for k in range(y.shape[0])])
 
