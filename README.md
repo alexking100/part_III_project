@@ -1,1 +1,4 @@
 # part_III_project
+
+Current methods for solving physical systems rely on knowing the equations of motion and physical parameters, which can require copious measurements to obtain. In this work, conditional neural processes are used to solve a physical system from a purely data-driven perspective. This method only needs a small amount of context data to fully solve a physical system. The model provides a distribution over the solution, which includes a variance in its estimation, preventing it from becoming over-confident. The conditional neural process can be modified to suit learning on physical systems. We found that physically-inspired modifications can increase the potential of the conditional neural process, with encouraging results achieved for an example physical system: two-dimensional heat diffusion. For 30 context points randomly selected from a total 500 dataset points, a mean squared error for the prediction was 1.6\% for the modified neural process.
+
